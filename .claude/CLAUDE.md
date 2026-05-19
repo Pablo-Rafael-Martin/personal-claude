@@ -41,6 +41,29 @@ Regras práticas:
 
 A regra é restritiva por padrão. O custo de pausar pra perguntar é zero; o custo de mandar e-mail indevido pra mailbox institucional pode ser alto (constrangimento, vazamento de teste, ruído pra gente que não pediu).
 
+# Análise antes de decisões arquiteturais
+
+**NUNCA tome decisão arquitetural não-trivial sem antes ler de ponta a ponta os arquivos diretamente envolvidos e citar linha real para cada conclusão.** Decisão arquitetural não-trivial inclui, entre outras: criar módulo/pacote/subpacote paralelo a um existente, separar OU consolidar código equivalente, escolher entre estender uma classe existente vs criar uma nova, propor refatoração estrutural (mover classes, mudar herança, criar abstrações, dividir arquivos), e qualquer alegação de "acoplamento", "risco de quebrar X", "dependência impede Y" usada como justificativa.
+
+**Procedimento obrigatório, em ordem:**
+
+1. **Leitura COMPLETA dos arquivos diretamente envolvidos.** Não vale rolagem rápida, não vale scan estrutural ("só pra ter ideia"), não vale ler só os imports e assinaturas. Tem que ler o corpo de cada método, de ponta a ponta, até o fim do arquivo. Se o arquivo for grande, leia em chunks até cobrir 100%. Se houver mais de um arquivo relevante (ex: `crawler.py` + `service.py` + `http_client.py`), todos passam pela mesma leitura completa.
+
+2. **`grep` por sinais de intenção do autor original** ANTES de decidir layout: `grep -nE "TODO|FIXME|# c[oó]digo aqui|placeholder|NotImplementedError|pass *$" arquivo.py`. Placeholder vazio = sinal explícito de "implementar AQUI". Ignorar isso é o erro mais grave possível.
+
+3. **Citar linha real para cada conclusão.** Toda alegação de acoplamento, risco, dependência ou impossibilidade exige referência no formato `arquivo.py:N` com o trecho de código. Se não conseguir apontar a linha, **a alegação não existe** — descartar o argumento.
+
+4. **Memória de decisão arquitetural** (sua ou de sessão anterior) é **hipótese a re-validar**, não regra. Quando puxar memória que sugere arquitetura, declarar explicitamente "essa decisão veio da memória X, vou re-validar contra o código atual antes de aplicar" e fazer o passo 1+2+3 antes de aplicar. Memória de DECISÕES SUAS não tem autoridade sobre o código real do momento.
+
+**Não cobre** (operações triviais que NÃO são decisão arquitetural):
+- Bug fix dentro de uma função.
+- Adicionar/renomear campo de DTO/struct/class.
+- Adicionar logging, validação, retry, throttle.
+- Renomear variável local.
+- Format/lint.
+
+**Em caso de dúvida se a decisão é arquitetural ou trivial: trate como arquitetural** e siga o procedimento. O custo de ler mais um arquivo é zero; o custo de uma decisão arquitetural errada com base em análise rasa é horas de retrabalho e quebra de confiança.
+
 # Modo Orquestrador
 
 **Ativação**: ligado quando o contexto do turno contém `ORQ_MODE: ATIVO` (injetado pelo hook UserPromptSubmit, com base na presença de `<cwd>/.claude/state/orq.flag`). Liga com `/orq`, desliga com `/orq-off`. **Estado é por projeto** (cwd), não global.
